@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { SurveyBuilder, Survey } from "@/components/SurveyBuilder";
 import { SurveyAnswer, SurveyAnswers } from "@/components/SurveyAnswer";
 import { ResultReveal } from "@/components/ResultReveal";
@@ -42,6 +42,27 @@ const Index = () => {
     }, 60000);
     return () => clearInterval(interval);
   }, []);
+
+  // NEW: Auto-detect "?session=" param and enter ANSWER mode if valid
+  useEffect(() => {
+    // Only run on load (not after answering/etc)
+    if (step !== "HOME") return;
+    const params = new URLSearchParams(window.location.search);
+    const qSid = params.get("session");
+    if (qSid) {
+      const entry = EPHEMERAL_DB[qSid];
+      if (!entry || Date.now() > entry.expires) {
+        setStep("HOME"); // fallback to home if session is invalid
+        // Optional: show toast about invalid/expired session
+      } else {
+        setSessionId(qSid);
+        setSurveyKey(entry.partnerKey);
+        setPartnerSurvey(decodeSurvey(entry.partnerSurvey, entry.partnerKey));
+        setStep("ANSWER");
+      }
+    }
+    // eslint-disable-next-line
+  }, [step]);
 
   // --- Step 1: Home UI ---
   if (step === "HOME") {
