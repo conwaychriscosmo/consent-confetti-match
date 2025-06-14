@@ -183,13 +183,20 @@ const Index = () => {
               setStep("RESULT");
               return;
             }
-            // Rubric check: every partner answer must be one of acceptableAnswers for that question
+            // Rubric check:
+            // For yesno: acceptableAnswers includes
+            // For number/text: always accept (no rubric)
             const creatorSurvey = decodeSurvey(entry.survey, entry.key);
             let ok =
               answers.length === creatorSurvey.questions.length &&
-              answers.every((a, i) =>
-                creatorSurvey.questions[i].acceptableAnswers.includes(a.value)
-              );
+              answers.every((a, i) => {
+                const q = creatorSurvey.questions[i];
+                if (q.type === "yesno") {
+                  return q.acceptableAnswers?.includes(a.value);
+                }
+                // For number/text types, accept any response
+                return typeof a.value === "string" && a.value.length > 0;
+              });
             entry.partnerAnswers = answers;
             setResult(ok);
             setStep("RESULT");

@@ -5,10 +5,14 @@ import { Button } from "@/components/ui/button";
 import { getRandomQuestions, SUGGESTED_QUESTIONS } from "@/utils/surveySuggestions";
 import { ComfortEmoji, EmojiLegend } from "./ComfortEmoji";
 
+// Extended type supports yesno, number, text
+type QuestionType = "yesno" | "number" | "text";
 type Question = {
   text: string;
   emoji?: string;
-  acceptableAnswers: string[]; // NEW: "yes"[] or "yes"|"no"[]
+  type: QuestionType;
+  // For yesno only: which values are acceptable
+  acceptableAnswers?: string[];
 };
 
 export type Survey = {
@@ -16,6 +20,11 @@ export type Survey = {
 };
 
 const ANSWERS = ["yes", "no"];
+const QUESTION_TYPE_LABELS = {
+  yesno: "Yes/No",
+  number: "Number",
+  text: "Text / Freeform",
+};
 
 export const SurveyBuilder = ({
   onBuilt,
@@ -26,21 +35,35 @@ export const SurveyBuilder = ({
   const [input, setInput] = useState("");
   const [showSuggest, setShowSuggest] = useState(false);
 
-  const [activeRubric, setActiveRubric] = useState<string[]>(["yes"]); // For form
+  // NEW: support three types
+  const [type, setType] = useState<QuestionType>("yesno");
+  // Only for yes/no
+  const [activeRubric, setActiveRubric] = useState<string[]>(["yes"]); // For yesno
+
+  const resetFields = () => {
+    setInput("");
+    setType("yesno");
+    setActiveRubric(["yes"]);
+  };
 
   const addLine = () => {
     const trimmed = input.trim();
     if (!trimmed) return;
-    setQuestions([
-      ...questions,
-      { text: trimmed, acceptableAnswers: [...activeRubric] }
-    ]);
-    setInput("");
-    setActiveRubric(["yes"]);
+    let question: Question;
+    if (type === "yesno") {
+      question = { text: trimmed, type, acceptableAnswers: [...activeRubric] };
+    } else {
+      question = { text: trimmed, type };
+    }
+    setQuestions([...questions, question]);
+    resetFields();
   };
 
-  const addSuggestion = (question: { text: string, emoji?: string }) => {
-    setQuestions([...questions, { ...question, acceptableAnswers: ["yes"] }]);
+  const addSuggestion = (question: { text: string; emoji?: string }) => {
+    setQuestions([
+      ...questions,
+      { ...question, type: "yesno", acceptableAnswers: ["yes"] },
+    ]);
   };
 
   const removeQuestion = (idx: number) => {
@@ -48,18 +71,22 @@ export const SurveyBuilder = ({
   };
 
   const setRubricForNext = (answer: string) => {
-    setActiveRubric(r => r.includes(answer) ? r.filter(a => a !== answer) : [...r, answer]);
+    setActiveRubric((r) =>
+      r.includes(answer) ? r.filter((a) => a !== answer) : [...r, answer]
+    );
   };
 
   const setRubricForExisting = (idx: number, answer: string) => {
-    setQuestions(questions =>
+    setQuestions((questions) =>
       questions.map((q, i) =>
-        i === idx
+        i === idx && q.type === "yesno"
           ? {
               ...q,
-              acceptableAnswers: q.acceptableAnswers.includes(answer)
-                ? q.acceptableAnswers.filter(a => a !== answer)
-                : [...q.acceptableAnswers, answer]
+              acceptableAnswers: q.acceptableAnswers
+                ? q.acceptableAnswers.includes(answer)
+                  ? q.acceptableAnswers.filter((a) => a !== answer)
+                  : [...q.acceptableAnswers, answer]
+                : [answer],
             }
           : q
       )
@@ -76,38 +103,55 @@ export const SurveyBuilder = ({
 
         <div className="mb-4 flex flex-col gap-2">
           {questions.map((q, i) => (
-            <div key={i} className="flex flex-col gap-1 bg-secondary/80 rounded py-2 px-2 relative">
+            <div
+              key={i}
+              className="flex flex-col gap-1 bg-secondary/80 rounded py-2 px-2 relative"
+            >
               <div className="flex items-center gap-2">
                 <span>{i + 1}.</span>
-                <span>{q.text}{q.emoji && <ComfortEmoji emoji={q.emoji} />}</span>
+                <span>
+                  {q.text}
+                  {q.emoji && <ComfortEmoji emoji={q.emoji} />}
+                  <span className="ml-2 text-xs rounded px-1 bg-accent/50 opacity-80">
+                    {QUESTION_TYPE_LABELS[q.type]}
+                  </span>
+                </span>
                 <Button
                   size="sm"
                   variant="ghost"
                   className="ml-auto px-1.5 text-destructive"
                   onClick={() => removeQuestion(i)}
                   type="button"
-                >✕</Button>
+                >
+                  ✕
+                </Button>
               </div>
-              <div className="flex gap-2 mt-1 ml-5 text-sm">
-                <span className="opacity-80">Acceptable:</span>
-                {ANSWERS.map(ans => (
-                  <Button
-                    key={ans}
-                    type="button"
-                    size="sm"
-                    variant={q.acceptableAnswers.includes(ans) ? "default" : "outline"}
-                    className="px-3"
-                    onClick={() => setRubricForExisting(i, ans)}
-                  >
-                    {ans === "yes" ? "Yes" : "No"}
-                  </Button>
-                ))}
-              </div>
+              {q.type === "yesno" && (
+                <div className="flex gap-2 mt-1 ml-5 text-sm">
+                  <span className="opacity-80">Acceptable:</span>
+                  {ANSWERS.map((ans) => (
+                    <Button
+                      key={ans}
+                      type="button"
+                      size="sm"
+                      variant={
+                        q.acceptableAnswers?.includes(ans)
+                          ? "default"
+                          : "outline"
+                      }
+                      className="px-3"
+                      onClick={() => setRubricForExisting(i, ans)}
+                    >
+                      {ans === "yes" ? "Yes" : "No"}
+                    </Button>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>
         <form
-          onSubmit={e => {
+          onSubmit={(e) => {
             e.preventDefault();
             addLine();
           }}
@@ -117,28 +161,40 @@ export const SurveyBuilder = ({
             className="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring"
             placeholder="Type a question (add emoji for comfort)..."
             value={input}
-            onChange={e => setInput(e.target.value)}
+            onChange={(e) => setInput(e.target.value)}
             maxLength={120}
+            required
           />
+          <select
+            value={type}
+            onChange={(e) => setType(e.target.value as QuestionType)}
+            className="border rounded px-2 py-1 bg-muted text-sm"
+          >
+            <option value="yesno">Yes/No</option>
+            <option value="number">Number</option>
+            <option value="text">Text</option>
+          </select>
           <Button type="submit" variant="default">
             Add
           </Button>
         </form>
-        <div className="flex gap-2 mb-2 ml-1">
-          <span className="opacity-60 text-xs mt-2">Acceptable:</span>
-          {ANSWERS.map(ans => (
-            <Button
-              key={ans}
-              type="button"
-              size="sm"
-              variant={activeRubric.includes(ans) ? "default" : "outline"}
-              className="px-3"
-              onClick={() => setRubricForNext(ans)}
-            >
-              {ans === "yes" ? "Yes" : "No"}
-            </Button>
-          ))}
-        </div>
+        {type === "yesno" && (
+          <div className="flex gap-2 mb-2 ml-1">
+            <span className="opacity-60 text-xs mt-2">Acceptable:</span>
+            {ANSWERS.map((ans) => (
+              <Button
+                key={ans}
+                type="button"
+                size="sm"
+                variant={activeRubric.includes(ans) ? "default" : "outline"}
+                className="px-3"
+                onClick={() => setRubricForNext(ans)}
+              >
+                {ans === "yes" ? "Yes" : "No"}
+              </Button>
+            ))}
+          </div>
+        )}
 
         <Button
           size="sm"
@@ -175,3 +231,4 @@ export const SurveyBuilder = ({
     </Card>
   );
 };
+
