@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { SurveyBuilder, Survey } from "@/components/SurveyBuilder";
 import { SessionLinkQR } from "@/components/SessionLinkQR";
@@ -178,19 +177,22 @@ const Index = () => {
           survey={svy}
           onSubmit={(answers) => {
             setMyAnswers(answers);
-            // Now, check answers against partner's logic
             const entry = EPHEMERAL_DB[sessionId];
             if (!entry) {
               setResult(false);
               setStep("RESULT");
               return;
             }
-            // Minimum: require all "yes"
-            const ok = answers.every(a => a && a.value === "yes");
+            // Rubric check: every partner answer must be one of acceptableAnswers for that question
+            const creatorSurvey = decodeSurvey(entry.survey, entry.key);
+            let ok =
+              answers.length === creatorSurvey.questions.length &&
+              answers.every((a, i) =>
+                creatorSurvey.questions[i].acceptableAnswers.includes(a.value)
+              );
             entry.partnerAnswers = answers;
             setResult(ok);
             setStep("RESULT");
-            // Self delete in 10s for restarts
             setTimeout(() => { setStep("GONE"); }, 65000);
             setTimeout(() => { delete EPHEMERAL_DB[sessionId]; }, 70000);
           }}

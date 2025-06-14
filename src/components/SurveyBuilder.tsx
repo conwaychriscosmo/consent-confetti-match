@@ -8,11 +8,14 @@ import { ComfortEmoji, EmojiLegend } from "./ComfortEmoji";
 type Question = {
   text: string;
   emoji?: string;
+  acceptableAnswers: string[]; // NEW: "yes"[] or "yes"|"no"[]
 };
 
 export type Survey = {
   questions: Question[];
 };
+
+const ANSWERS = ["yes", "no"];
 
 export const SurveyBuilder = ({
   onBuilt,
@@ -23,22 +26,44 @@ export const SurveyBuilder = ({
   const [input, setInput] = useState("");
   const [showSuggest, setShowSuggest] = useState(false);
 
+  const [activeRubric, setActiveRubric] = useState<string[]>(["yes"]); // For form
+
   const addLine = () => {
     const trimmed = input.trim();
     if (!trimmed) return;
     setQuestions([
       ...questions,
-      { text: trimmed }
+      { text: trimmed, acceptableAnswers: [...activeRubric] }
     ]);
     setInput("");
+    setActiveRubric(["yes"]);
   };
 
-  const addSuggestion = (question: Question) => {
-    setQuestions([...questions, question]);
+  const addSuggestion = (question: { text: string, emoji?: string }) => {
+    setQuestions([...questions, { ...question, acceptableAnswers: ["yes"] }]);
   };
 
   const removeQuestion = (idx: number) => {
     setQuestions(questions.filter((_, i) => i !== idx));
+  };
+
+  const setRubricForNext = (answer: string) => {
+    setActiveRubric(r => r.includes(answer) ? r.filter(a => a !== answer) : [...r, answer]);
+  };
+
+  const setRubricForExisting = (idx: number, answer: string) => {
+    setQuestions(questions =>
+      questions.map((q, i) =>
+        i === idx
+          ? {
+              ...q,
+              acceptableAnswers: q.acceptableAnswers.includes(answer)
+                ? q.acceptableAnswers.filter(a => a !== answer)
+                : [...q.acceptableAnswers, answer]
+            }
+          : q
+      )
+    );
   };
 
   return (
@@ -51,15 +76,33 @@ export const SurveyBuilder = ({
 
         <div className="mb-4 flex flex-col gap-2">
           {questions.map((q, i) => (
-            <div key={i} className="flex items-center gap-2 bg-secondary/80 rounded py-1 px-2">
-              <span>{i + 1}. {q.text}{q.emoji && <ComfortEmoji emoji={q.emoji} />}</span>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="ml-auto px-1.5 text-destructive"
-                onClick={() => removeQuestion(i)}
-                type="button"
-              >✕</Button>
+            <div key={i} className="flex flex-col gap-1 bg-secondary/80 rounded py-2 px-2 relative">
+              <div className="flex items-center gap-2">
+                <span>{i + 1}.</span>
+                <span>{q.text}{q.emoji && <ComfortEmoji emoji={q.emoji} />}</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="ml-auto px-1.5 text-destructive"
+                  onClick={() => removeQuestion(i)}
+                  type="button"
+                >✕</Button>
+              </div>
+              <div className="flex gap-2 mt-1 ml-5 text-sm">
+                <span className="opacity-80">Acceptable:</span>
+                {ANSWERS.map(ans => (
+                  <Button
+                    key={ans}
+                    type="button"
+                    size="sm"
+                    variant={q.acceptableAnswers.includes(ans) ? "default" : "outline"}
+                    className="px-3"
+                    onClick={() => setRubricForExisting(i, ans)}
+                  >
+                    {ans === "yes" ? "Yes" : "No"}
+                  </Button>
+                ))}
+              </div>
             </div>
           ))}
         </div>
@@ -81,6 +124,21 @@ export const SurveyBuilder = ({
             Add
           </Button>
         </form>
+        <div className="flex gap-2 mb-2 ml-1">
+          <span className="opacity-60 text-xs mt-2">Acceptable:</span>
+          {ANSWERS.map(ans => (
+            <Button
+              key={ans}
+              type="button"
+              size="sm"
+              variant={activeRubric.includes(ans) ? "default" : "outline"}
+              className="px-3"
+              onClick={() => setRubricForNext(ans)}
+            >
+              {ans === "yes" ? "Yes" : "No"}
+            </Button>
+          ))}
+        </div>
 
         <Button
           size="sm"

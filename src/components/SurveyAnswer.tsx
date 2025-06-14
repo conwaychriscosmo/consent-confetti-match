@@ -25,7 +25,6 @@ export const SurveyAnswer = ({
     const updated = answers.slice();
     updated[step] = { value: v };
     setAnswers(updated);
-    // Delay next question for animation
     setTimeout(() => {
       if (step < survey.questions.length - 1) setStep(step + 1);
       else onSubmit(updated);
