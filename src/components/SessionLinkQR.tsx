@@ -1,6 +1,6 @@
 
 import React from "react";
-import { QRCode } from "qrcode.react";
+import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
@@ -16,7 +16,13 @@ export const SessionLinkQR = ({
       <h2 className="font-bold text-xl mb-2">Session Ready</h2>
       <div className="mb-2">Share this QR or link with your partner.</div>
       <div className="flex justify-center my-4">
-        <QRCode value={url} size={160} level="Q" bgColor="#FFF" fgColor="#222" />
+        <QRCodeSVG
+          value={url}
+          size={160}
+          level="Q"
+          bgColor="#FFF"
+          fgColor="#222"
+        />
       </div>
       <div className="select-all bg-muted p-2 rounded mb-2 text-sm break-words">{url}</div>
       <Button onClick={onCopy} className="mb-2 w-full">Copy Link</Button>
