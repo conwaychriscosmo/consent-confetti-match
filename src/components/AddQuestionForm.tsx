@@ -54,34 +54,36 @@ export const AddQuestionForm = ({
           e.preventDefault();
           onAdd();
         }}
-        className="flex gap-2 mb-2"
+        className="flex flex-col sm:flex-row gap-2 mb-2 w-full"
       >
         <input
-          className="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring"
+          className="px-3 py-3 border rounded focus:outline-none focus:ring flex-1 min-w-0 text-base"
           placeholder="Type a question (add emoji for comfort)..."
           value={input}
           onChange={e => onInputChange(e.target.value)}
           maxLength={120}
           required
         />
-        <select
-          value={type}
-          onChange={e => onTypeChange(e.target.value as QuestionType)}
-          className="border rounded px-2 py-1 bg-muted text-sm"
-        >
-          <option value="yesno">Yes/No</option>
-          <option value="number">Number</option>
-          <option value="text">Text</option>
-          <option value="multiplechoice">Multiple Choice</option>
-        </select>
-        <Button type="submit" variant="default">
-          Add
-        </Button>
+        <div className="flex flex-row gap-2 items-center">
+          <select
+            value={type}
+            onChange={e => onTypeChange(e.target.value as QuestionType)}
+            className="border rounded px-2 py-2 bg-muted text-sm min-w-[110px]"
+          >
+            <option value="yesno">Yes/No</option>
+            <option value="number">Number</option>
+            <option value="text">Text</option>
+            <option value="multiplechoice">Multiple Choice</option>
+          </select>
+          <Button type="submit" variant="default" className="py-2 px-4 text-base sm:text-sm">
+            Add
+          </Button>
+        </div>
       </form>
 
       {/* Criteria UI for Yes/No */}
       {type === "yesno" && (
-        <div className="flex gap-2 mb-2 ml-1">
+        <div className="flex gap-2 mb-2 ml-1 flex-wrap items-center">
           <span className="opacity-60 text-xs mt-2">Acceptable:</span>
           {ANSWERS.map((ans) => (
             <Button
@@ -100,7 +102,7 @@ export const AddQuestionForm = ({
 
       {/* Criteria UI for Number */}
       {type === "number" && (
-        <div className="flex gap-2 mb-2 ml-1 items-center">
+        <div className="flex gap-2 mb-2 ml-1 items-center flex-wrap">
           <span className="opacity-60 text-xs mt-2">Limits:</span>
           <Input
             type="number"
@@ -140,16 +142,16 @@ export const AddQuestionForm = ({
 
       {/* Criteria UI for Multiple Choice */}
       {type === "multiplechoice" && (
-        <div className="flex flex-col gap-1 mb-2 ml-1">
+        <div className="flex flex-col gap-1 mb-2 ml-1 w-full">
           <div className="opacity-60 text-xs mb-1 mt-1">Choices & Accepted answers:</div>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1 w-full">
             {choices.map((choice, idx) => (
-              <div key={idx} className="flex items-center gap-2">
+              <div key={idx} className="flex items-center gap-2 w-full">
                 <Input
                   value={choice}
                   onChange={e => onChoiceChange(idx, e.target.value)}
                   placeholder={`Option ${String.fromCharCode(65 + idx)}`}
-                  className="text-xs flex-1"
+                  className="text-xs flex-1 min-w-0"
                   maxLength={60}
                   required
                   aria-label={`Choice ${idx + 1}`}
@@ -158,7 +160,7 @@ export const AddQuestionForm = ({
                   type="button"
                   size="sm"
                   variant={activeRubric.includes(choice) ? "default" : "outline"}
-                  className="h-8 text-xs"
+                  className="h-9 text-xs flex-shrink-0"
                   onClick={() => onRubricToggle(choice)}
                   disabled={!choice}
                 >
@@ -168,7 +170,7 @@ export const AddQuestionForm = ({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-destructive"
+                  className="h-9 w-9 text-destructive flex-shrink-0"
                   onClick={() => onRemoveChoice(idx)}
                   aria-label="Remove choice"
                   disabled={choices.length <= 2}
@@ -193,4 +195,3 @@ export const AddQuestionForm = ({
     </>
   );
 };
-

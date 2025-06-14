@@ -48,105 +48,112 @@ export const SurveyAnswer = ({
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto shadow-md p-5 bg-background">
-      <div className="mb-6 flex flex-col items-center">
-        <span className="font-semibold text-lg mb-2">
-          Q{step + 1}/{survey.questions.length}: {current.text}
-          {current.emoji && <ComfortEmoji emoji={current.emoji} />}
-        </span>
-        <div className="flex flex-col gap-4 mt-4 w-full">
-          {/* Yes/No Input */}
-          {current.type === "yesno" && (
-            <div className="flex gap-4 justify-center">
-              <Button
-                size="lg"
-                className="px-8"
-                onClick={() => handleAnswer("yes")}
-                data-testid="yes"
-              >
-                Yes
-              </Button>
-              <Button
-                size="lg"
-                variant="secondary"
-                className="px-8"
-                onClick={() => handleAnswer("no")}
-                data-testid="no"
-              >
-                No
-              </Button>
-            </div>
-          )}
-
-          {/* Number Input */}
-          {current.type === "number" && (
-            <form onSubmit={handleSubmitInput} className="w-full flex flex-col gap-2">
-              <input
-                type="number"
-                value={inputValue}
-                onChange={e => setInputValue(e.target.value)}
-                required
-                className="border rounded px-3 py-2 w-full text-lg"
-                data-testid="number-input"
-              />
-              <Button type="submit" size="lg" className="w-full mt-1">
-                Next
-              </Button>
-            </form>
-          )}
-
-          {/* Text Input */}
-          {current.type === "text" && (
-            <form onSubmit={handleSubmitInput} className="w-full flex flex-col gap-2">
-              <textarea
-                value={inputValue}
-                onChange={e => setInputValue(e.target.value)}
-                required
-                className="border rounded px-3 py-2 w-full text-base min-h-[90px]"
-                maxLength={350}
-                data-testid="text-input"
-              />
-              <Button type="submit" size="lg" className="w-full mt-1">
-                Next
-              </Button>
-            </form>
-          )}
-
-          {/* Multiple Choice Input */}
-          {current.type === "multiplechoice" && current.choices && (
-            <div className="flex flex-col gap-3">
-              {current.choices.map((choice, idx) => (
+    <div className="w-full flex justify-center p-0 sm:p-4 min-h-[95vh]">
+      <Card className="w-full max-w-lg mx-auto shadow-md px-2 sm:px-6 py-6 flex flex-col justify-between bg-background 
+        rounded-lg sm:rounded-xl
+        min-h-[70vh] sm:min-h-[450px] 
+        sm:p-6">
+        <div className="mb-2 flex flex-col items-center w-full">
+          <span className="font-semibold text-lg mb-2 text-center break-words">
+            Q{step + 1}/{survey.questions.length}: {current.text}
+            {current.emoji && <ComfortEmoji emoji={current.emoji} />}
+          </span>
+          <div className="flex flex-col gap-4 mt-4 w-full items-center">
+            {/* Yes/No Input */}
+            {current.type === "yesno" && (
+              <div className="flex gap-4 justify-center w-full">
                 <Button
-                  key={idx}
-                  type="button"
                   size="lg"
-                  className="w-full"
-                  variant={inputValue === choice ? "default" : "outline"}
-                  onClick={() => {
-                    setInputValue(choice);
-                    setTimeout(() => handleAnswer(choice), 100);
-                  }}
-                  data-testid={`mc-choice-${idx}`}
+                  className="px-9 w-1/2 sm:w-auto"
+                  onClick={() => handleAnswer("yes")}
+                  data-testid="yes"
                 >
-                  {String.fromCharCode(65 + idx)}. {choice}
+                  Yes
                 </Button>
-              ))}
-            </div>
-          )}
+                <Button
+                  size="lg"
+                  variant="secondary"
+                  className="px-9 w-1/2 sm:w-auto"
+                  onClick={() => handleAnswer("no")}
+                  data-testid="no"
+                >
+                  No
+                </Button>
+              </div>
+            )}
+
+            {/* Number Input */}
+            {current.type === "number" && (
+              <form onSubmit={handleSubmitInput} className="w-full flex flex-col gap-2">
+                <input
+                  type="number"
+                  value={inputValue}
+                  onChange={e => setInputValue(e.target.value)}
+                  required
+                  className="border rounded px-3 py-3 w-full text-lg focus:ring"
+                  data-testid="number-input"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                />
+                <Button type="submit" size="lg" className="w-full mt-1">
+                  Next
+                </Button>
+              </form>
+            )}
+
+            {/* Text Input */}
+            {current.type === "text" && (
+              <form onSubmit={handleSubmitInput} className="w-full flex flex-col gap-2">
+                <textarea
+                  value={inputValue}
+                  onChange={e => setInputValue(e.target.value)}
+                  required
+                  className="border rounded px-3 py-3 w-full text-base min-h-[90px] focus:ring"
+                  maxLength={350}
+                  data-testid="text-input"
+                />
+                <Button type="submit" size="lg" className="w-full mt-1">
+                  Next
+                </Button>
+              </form>
+            )}
+
+            {/* Multiple Choice Input */}
+            {current.type === "multiplechoice" && current.choices && (
+              <div className="flex flex-col gap-3 w-full">
+                {current.choices.map((choice, idx) => (
+                  <Button
+                    key={idx}
+                    type="button"
+                    size="lg"
+                    className="w-full text-base py-3"
+                    variant={inputValue === choice ? "default" : "outline"}
+                    onClick={() => {
+                      setInputValue(choice);
+                      setTimeout(() => handleAnswer(choice), 100);
+                    }}
+                    data-testid={`mc-choice-${idx}`}
+                  >
+                    {String.fromCharCode(65 + idx)}. {choice}
+                  </Button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-      <div className="flex gap-0.5 mt-3 justify-center">
-        {survey.questions.map((_, i) => (
-          <span
-            key={i}
-            className={
-              "h-2 w-6 mx-0.5 rounded bg-accent transition-all " +
-              (i === step ? "opacity-70" : "opacity-30")
-            }
-          />
-        ))}
-      </div>
-    </Card>
+        <div className="flex gap-0.5 mt-6 justify-center">
+          {survey.questions.map((_, i) => (
+            <span
+              key={i}
+              className={
+                "h-2 w-6 mx-0.5 rounded bg-accent transition-all " +
+                (i === step ? "opacity-70" : "opacity-30")
+              }
+            />
+          ))}
+        </div>
+      </Card>
+    </div>
   );
 };
 

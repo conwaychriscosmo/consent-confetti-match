@@ -162,48 +162,57 @@ export const SurveyBuilder = ({
   };
 
   return (
-    <Card className="w-full max-w-xl mx-auto shadow-lg bg-background border-2 border-primary/20">
-      <div className="p-6">
-        <h2 className="font-semibold text-lg mb-3">
+    <Card className="w-full max-w-xl mx-auto shadow-lg bg-background border-2 border-primary/20
+      rounded-lg p-0 md:p-6
+      sm:max-w-full
+      ">
+      <div className="p-4 sm:p-6">
+        <h2 className="font-semibold text-lg mb-3 text-center sm:text-left">
           1. Add Your Questions
         </h2>
         <EmojiLegend />
 
-        <QuestionList
-          questions={questions}
-          onRemove={removeQuestion}
-          onRubricChange={setRubricForExisting}
-        />
+        <div className="w-full">
+          <QuestionList
+            questions={questions}
+            onRemove={removeQuestion}
+            onRubricChange={setRubricForExisting}
+          />
+        </div>
 
-        <AddQuestionForm
-          input={input}
-          type={type}
-          activeRubric={activeRubric}
-          onInputChange={setInput}
-          onTypeChange={setType}
-          onRubricToggle={setRubricForNext}
-          minValue={minValue}
-          maxValue={maxValue}
-          onMinChange={setMinValue}
-          onMaxChange={setMaxValue}
-          llmCriteria={llmCriteria}
-          onLLMCriteriaChange={setLLMCriteria}
-          onAdd={addLine}
-          // MC props
-          choices={choices}
-          onChoiceChange={handleChoiceChange}
-          onAddChoice={handleAddChoice}
-          onRemoveChoice={handleRemoveChoice}
-        />
+        <div className="w-full">
+          <AddQuestionForm
+            input={input}
+            type={type}
+            activeRubric={activeRubric}
+            onInputChange={setInput}
+            onTypeChange={setType}
+            onRubricToggle={setRubricForNext}
+            minValue={minValue}
+            maxValue={maxValue}
+            onMinChange={setMinValue}
+            onMaxChange={setMaxValue}
+            llmCriteria={llmCriteria}
+            onLLMCriteriaChange={setLLMCriteria}
+            onAdd={addLine}
+            // MC props
+            choices={choices}
+            onChoiceChange={handleChoiceChange}
+            onAddChoice={handleAddChoice}
+            onRemoveChoice={handleRemoveChoice}
+          />
+        </div>
 
-        <SuggestionSection
-          show={showSuggest}
-          onToggle={() => setShowSuggest((v) => !v)}
-          onAddSuggestion={addSuggestion}
-        />
+        <div className="w-full">
+          <SuggestionSection
+            show={showSuggest}
+            onToggle={() => setShowSuggest((v) => !v)}
+            onAddSuggestion={addSuggestion}
+          />
+        </div>
 
         <Button
-          className="mt-3 w-full"
+          className="mt-4 md:mt-3 w-full py-3 text-base sm:text-lg"
           disabled={questions.length < 2}
           onClick={() => {
             if (questions.length >= 2) {

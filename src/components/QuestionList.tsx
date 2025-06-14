@@ -33,15 +33,15 @@ export const QuestionList = ({
   onRemove,
   onRubricChange,
 }: Props) => (
-  <div className="mb-4 flex flex-col gap-2">
+  <div className="mb-4 flex flex-col gap-2 w-full">
     {questions.map((q, i) => (
       <div
         key={i}
-        className="flex flex-col gap-1 bg-secondary/80 rounded py-2 px-2 relative"
+        className="flex flex-col gap-1 bg-secondary/80 rounded py-2 px-2 sm:px-3 relative"
       >
         <div className="flex items-center gap-2">
           <span>{i + 1}.</span>
-          <span>
+          <span className="flex flex-wrap items-center gap-2 w-full">
             {q.text}
             {q.emoji && <ComfortEmoji emoji={q.emoji} />}
             <span className="ml-2 text-xs rounded px-1 bg-accent/50 opacity-80">
@@ -51,16 +51,17 @@ export const QuestionList = ({
           <Button
             size="sm"
             variant="ghost"
-            className="ml-auto px-1.5 text-destructive"
+            className="ml-auto px-2 text-destructive"
             onClick={() => onRemove(i)}
             type="button"
+            aria-label="Remove question"
           >
             ✕
           </Button>
         </div>
         {/* Yes/No criteria */}
         {q.type === "yesno" && (
-          <div className="flex gap-2 mt-1 ml-5 text-sm">
+          <div className="flex gap-2 mt-1 ml-5 text-sm flex-wrap">
             <span className="opacity-80">Acceptable:</span>
             {ANSWERS.map((ans) => (
               <Button
@@ -82,7 +83,7 @@ export const QuestionList = ({
         )}
         {/* Number min/max criteria */}
         {q.type === "number" && (q.min != null || q.max != null) && (
-          <div className="flex gap-2 mt-1 ml-5 text-xs opacity-80">
+          <div className="flex gap-2 mt-1 ml-5 text-xs opacity-80 flex-wrap">
             {q.min != null && (
               <span>Min: <span className="font-semibold">{q.min}</span></span>
             )}
@@ -93,7 +94,7 @@ export const QuestionList = ({
         )}
         {/* Text LLM criteria */}
         {q.type === "text" && q.llmCriteria && (
-          <div className="flex gap-1 mt-1 ml-5 text-xs opacity-80">
+          <div className="flex gap-1 mt-1 ml-5 text-xs opacity-80 flex-wrap">
             <span>Criteria:</span>
             <span className="italic">{q.llmCriteria}</span>
           </div>
@@ -126,4 +127,3 @@ export const QuestionList = ({
     ))}
   </div>
 );
-
