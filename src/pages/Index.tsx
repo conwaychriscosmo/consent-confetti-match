@@ -1,38 +1,40 @@
 import React, { useState } from "react";
 import { SurveyBuilder, Survey } from "@/components/SurveyBuilder";
-import { SessionLinkQR } from "@/components/SessionLinkQR";
 import { SurveyAnswer, SurveyAnswers } from "@/components/SurveyAnswer";
 import { ResultReveal } from "@/components/ResultReveal";
-import { encodeSurvey, decodeSurvey, generateSessionKey } from "@/utils/crypto";
+import { decodeSurvey } from "@/utils/crypto";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
+import { SessionLinkModal } from "@/components/SessionLinkModal";
+import { useSessionCreator } from "@/hooks/useSessionCreator";
 
-// App memory "ephemeral" sessions
+// App memory "ephemeral" sessions (DB must match useSessionCreator)
 const SESSION_TIMEOUT = 10 * 60 * 1000; // 10 min
-
-// In-memory "database" for demo (not for prod!)
-const EPHEMERAL_DB: Record<string, any> = {};
+const EPHEMERAL_DB: Record<string, any> = (typeof window !== "undefined" && (window as any).EPHEMERAL_DB)
+  ? (window as any).EPHEMERAL_DB
+  : {};
 
 function urlsBase() {
   return window.location.origin + window.location.pathname;
 }
 
 const Index = () => {
-  // State machine
-  const [step, setStep] = useState<"HOME" | "BUILD" | "WAIT" | "ANSWER" | "RESULT" | "GONE">("HOME");
+  const [step, setStep] = useState<"HOME" | "WAIT" | "ANSWER" | "RESULT" | "GONE">("HOME");
   const [survey, setSurvey] = useState<Survey | null>(null);
   const [partnerSurvey, setPartnerSurvey] = useState<Survey | null>(null);
   const [surveyKey, setSurveyKey] = useState<string>("");
   const [sessionId, setSessionId] = useState<string>("");
   const [sessionUrl, setSessionUrl] = useState<string>("");
   const [myAnswers, setMyAnswers] = useState<SurveyAnswers>([]);
-  const [partnerAnswers, setPartnerAnswers] = useState<SurveyAnswers>([]);
   const [result, setResult] = useState<boolean | null>(null);
+
+  // For session creation modal
+  const [sessionModalOpen, setSessionModalOpen] = useState(false);
+  const { createSession } = useSessionCreator();
 
   // Session Cleanup
   React.useEffect(() => {
-    // Simple: prune expired "sessions" in demo "DB"
     const interval = setInterval(() => {
       Object.entries(EPHEMERAL_DB).forEach(([sid, data]) => {
         if (Date.now() > data.expires) delete EPHEMERAL_DB[sid];
@@ -76,7 +78,7 @@ const Index = () => {
           <Card className="w-full max-w-lg p-10 bg-background shadow-xl border">
             <h2 className="text-xl font-semibold mb-6">Get started:</h2>
             <div className="flex flex-col gap-4">
-              <Button className="w-full py-4 text-lg" onClick={() => setStep("BUILD")}>I want to create a session</Button>
+              <Button className="w-full py-4 text-lg" onClick={() => setStep("WAIT")}>I want to create a session</Button>
               <div className="relative flex justify-center items-center text-muted-foreground mb-1">or</div>
               <Button
                 className="w-full py-4"
@@ -90,7 +92,6 @@ const Index = () => {
                     toast({ description: "Invalid session code or link.", variant: "destructive" });
                     return;
                   }
-                  // Try to load partner's survey
                   const entry = EPHEMERAL_DB[trueSid];
                   if (!entry || Date.now() > entry.expires) {
                     toast({ description: "Session not found or expired.", variant: "destructive" });
@@ -111,63 +112,38 @@ const Index = () => {
     );
   }
 
-  // --- Step 2: Build Survey UI ---
-  if (step === "BUILD") {
+  // --- Step 2: Survey + Modal flow ---
+  if (step === "WAIT") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <SurveyBuilder
           onBuilt={(svy) => {
-            // Generate session
-            const key = generateSessionKey();
-            const partnerKey = generateSessionKey();
-            const sid = Math.random().toString(36).slice(2, 10);
-            // Save question to memory (demo: both user and partner must answer)
-            EPHEMERAL_DB[sid] = {
-              survey: encodeSurvey(svy, key),
-              partnerSurvey: encodeSurvey(svy, partnerKey), // Partner's view
-              key,
-              partnerKey,
-              expires: Date.now() + SESSION_TIMEOUT,
-              userAnswers: null,
-              partnerAnswers: null,
-            };
+            // Create session and open modal for sharing
+            const { key, sid, url } = createSession(svy);
             setSurvey(svy);
             setSurveyKey(key);
             setSessionId(sid);
-            setSessionUrl(`${urlsBase()}?session=${sid}`);
-            setStep("WAIT");
+            setSessionUrl(url);
+            setSessionModalOpen(true);
           }}
         />
-      </div>
-    );
-  }
-
-  // --- Step 3: Show Session Link & QR ---
-  if (step === "WAIT") {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
-        <SessionLinkQR
+        <SessionLinkModal
+          open={sessionModalOpen}
           url={sessionUrl}
           onCopy={() => {
             navigator.clipboard.writeText(sessionUrl);
             toast({ description: "Session link copied!" });
           }}
+          onClose={() => {
+            setSessionModalOpen(false);
+            // After closing modal, move to waiting for partner
+          }}
         />
-        <div className="text-center mt-8">
-          <div className="mb-2 text-lg text-muted-foreground">
-            Waiting for partner to join and answer your survey.
-          </div>
-          <Button
-            variant="ghost"
-            className="mt-2 text-xs underline"
-            onClick={() => { setStep("HOME"); }}
-          >Cancel Session</Button>
-        </div>
       </div>
     );
   }
 
-  // --- Step 4: Answer Survey (Incoming or Outgoing) ---
+  // --- Step 3: Answer Survey (Incoming or Outgoing) ---
   if (step === "ANSWER") {
     const svy = partnerSurvey;
     if (!svy) return <div>Session not found.</div>;
@@ -183,9 +159,6 @@ const Index = () => {
               setStep("RESULT");
               return;
             }
-            // Rubric check:
-            // For yesno: acceptableAnswers includes
-            // For number/text: always accept (no rubric)
             const creatorSurvey = decodeSurvey(entry.survey, entry.key);
             let ok =
               answers.length === creatorSurvey.questions.length &&
@@ -208,7 +181,7 @@ const Index = () => {
     );
   }
 
-  // --- Step 5: Results Reveal ---
+  // --- Step 4: Results Reveal ---
   if (step === "RESULT") {
     return (
       <div className="min-h-screen flex flex-col justify-center items-center bg-background">
@@ -220,7 +193,7 @@ const Index = () => {
     );
   }
 
-  // --- Step 6: Ephemeral Vanish ---
+  // --- Step 5: Ephemeral Vanish ---
   if (step === "GONE") {
     return (
       <div className="min-h-screen flex items-center justify-center">

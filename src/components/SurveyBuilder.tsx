@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,11 +33,8 @@ export const SurveyBuilder = ({
   const [questions, setQuestions] = useState<Question[]>([]);
   const [input, setInput] = useState("");
   const [showSuggest, setShowSuggest] = useState(false);
-
-  // NEW: support three types
   const [type, setType] = useState<QuestionType>("yesno");
-  // Only for yes/no
-  const [activeRubric, setActiveRubric] = useState<string[]>(["yes"]); // For yesno
+  const [activeRubric, setActiveRubric] = useState<string[]>(["yes"]);
 
   const resetFields = () => {
     setInput("");
@@ -223,7 +219,11 @@ export const SurveyBuilder = ({
         <Button
           className="mt-3 w-full"
           disabled={questions.length < 2}
-          onClick={() => onBuilt({ questions })}
+          onClick={() => {
+            if (questions.length >= 2) {
+              onBuilt({ questions });
+            }
+          }}
         >
           Start Session
         </Button>
@@ -231,4 +231,3 @@ export const SurveyBuilder = ({
     </Card>
   );
 };
-
