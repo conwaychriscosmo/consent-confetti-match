@@ -8,16 +8,18 @@ const QUESTION_TYPE_LABELS = {
   yesno: "Yes/No",
   number: "Number",
   text: "Text / Freeform",
+  multiplechoice: "Multiple Choice",
 };
 
 type Question = {
   text: string;
   emoji?: string;
-  type: "yesno" | "number" | "text";
+  type: "yesno" | "number" | "text" | "multiplechoice";
   acceptableAnswers?: string[];
   min?: number;
   max?: number;
   llmCriteria?: string;
+  choices?: string[];
 };
 
 type Props = {
@@ -96,7 +98,32 @@ export const QuestionList = ({
             <span className="italic">{q.llmCriteria}</span>
           </div>
         )}
+        {/* Multiple choice criteria */}
+        {q.type === "multiplechoice" && q.choices && q.choices.length > 0 && (
+          <div className="flex flex-col gap-1 mt-1 ml-5 text-sm">
+            <div className="mb-1">Choices:</div>
+            <div className="flex flex-wrap gap-2">
+              {q.choices.map((choice, idx) => (
+                <Button
+                  key={idx}
+                  type="button"
+                  size="sm"
+                  variant={
+                    q.acceptableAnswers?.includes(choice)
+                      ? "default"
+                      : "outline"
+                  }
+                  className="px-3"
+                  onClick={() => onRubricChange(i, choice)}
+                >
+                  {String.fromCharCode(65 + idx)}. {choice}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     ))}
   </div>
 );
+

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 const ANSWERS = ["yes", "no"];
-type QuestionType = "yesno" | "number" | "text";
+type QuestionType = "yesno" | "number" | "text" | "multiplechoice";
 
 type Props = {
   input: string;
@@ -20,6 +20,11 @@ type Props = {
   llmCriteria: string;
   onLLMCriteriaChange: (v: string) => void;
   onAdd: () => void;
+  // For multiplechoice
+  choices: string[];
+  onChoiceChange: (idx: number, v: string) => void;
+  onAddChoice: () => void;
+  onRemoveChoice: (idx: number) => void;
 };
 
 export const AddQuestionForm = ({
@@ -36,6 +41,11 @@ export const AddQuestionForm = ({
   llmCriteria,
   onLLMCriteriaChange,
   onAdd,
+  // Multiple choice props
+  choices,
+  onChoiceChange,
+  onAddChoice,
+  onRemoveChoice,
 }: Props) => {
   return (
     <>
@@ -62,6 +72,7 @@ export const AddQuestionForm = ({
           <option value="yesno">Yes/No</option>
           <option value="number">Number</option>
           <option value="text">Text</option>
+          <option value="multiplechoice">Multiple Choice</option>
         </select>
         <Button type="submit" variant="default">
           Add
@@ -126,6 +137,60 @@ export const AddQuestionForm = ({
           />
         </div>
       )}
+
+      {/* Criteria UI for Multiple Choice */}
+      {type === "multiplechoice" && (
+        <div className="flex flex-col gap-1 mb-2 ml-1">
+          <div className="opacity-60 text-xs mb-1 mt-1">Choices & Accepted answers:</div>
+          <div className="flex flex-col gap-1">
+            {choices.map((choice, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <Input
+                  value={choice}
+                  onChange={e => onChoiceChange(idx, e.target.value)}
+                  placeholder={`Option ${String.fromCharCode(65 + idx)}`}
+                  className="text-xs flex-1"
+                  maxLength={60}
+                  required
+                  aria-label={`Choice ${idx + 1}`}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={activeRubric.includes(choice) ? "default" : "outline"}
+                  className="h-8 text-xs"
+                  onClick={() => onRubricToggle(choice)}
+                  disabled={!choice}
+                >
+                  Mark Acceptable
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-destructive"
+                  onClick={() => onRemoveChoice(idx)}
+                  aria-label="Remove choice"
+                  disabled={choices.length <= 2}
+                >
+                  ✕
+                </Button>
+              </div>
+            ))}
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="w-fit mt-1 text-xs"
+              onClick={onAddChoice}
+              disabled={choices.length >= 6}
+            >
+              Add Choice
+            </Button>
+          </div>
+        </div>
+      )}
     </>
   );
 };
+

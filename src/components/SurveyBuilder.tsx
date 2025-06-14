@@ -7,19 +7,16 @@ import { QuestionList } from "./QuestionList";
 import { AddQuestionForm } from "./AddQuestionForm";
 import { SuggestionSection } from "./SuggestionSection";
 
-// Extended type supports yesno, number, text
-type QuestionType = "yesno" | "number" | "text";
+type QuestionType = "yesno" | "number" | "text" | "multiplechoice";
 type Question = {
   text: string;
   emoji?: string;
   type: QuestionType;
-  // For yesno only: which values are acceptable
   acceptableAnswers?: string[];
-  // For number
   min?: number;
   max?: number;
-  // For text
   llmCriteria?: string;
+  choices?: string[];
 };
 
 export type Survey = {
@@ -40,6 +37,23 @@ export const SurveyBuilder = ({
   const [maxValue, setMaxValue] = useState("");
   const [llmCriteria, setLLMCriteria] = useState("");
 
+  // Multiple choice state
+  const [choices, setChoices] = useState<string[]>(["", ""]);
+
+  React.useEffect(() => {
+    // Reset MC options/rubric on type change
+    if (type === "multiplechoice" && choices.length < 2) {
+      setChoices(["", ""]);
+      setActiveRubric([]);
+    } else if (type !== "multiplechoice") {
+      setChoices(["", ""]);
+    }
+    if (type === "yesno") {
+      setActiveRubric(["yes"]);
+    }
+  // eslint-disable-next-line
+  }, [type]);
+
   const resetFields = () => {
     setInput("");
     setType("yesno");
@@ -47,6 +61,7 @@ export const SurveyBuilder = ({
     setMinValue("");
     setMaxValue("");
     setLLMCriteria("");
+    setChoices(["", ""]);
   };
 
   const addLine = () => {
@@ -67,6 +82,16 @@ export const SurveyBuilder = ({
         text: trimmed,
         type,
         llmCriteria: llmCriteria.trim() ? llmCriteria.trim() : undefined,
+      };
+    } else if (type === "multiplechoice") {
+      // Must have at least 2 non-empty choices
+      const validChoices = choices.map(c => c.trim()).filter(Boolean);
+      if (validChoices.length < 2) return;
+      question = {
+        text: trimmed,
+        type,
+        choices: validChoices,
+        acceptableAnswers: activeRubric.filter(a => validChoices.includes(a)),
       };
     } else {
       question = { text: trimmed, type };
@@ -94,18 +119,45 @@ export const SurveyBuilder = ({
 
   const setRubricForExisting = (idx: number, answer: string) => {
     setQuestions((questions) =>
-      questions.map((q, i) =>
-        i === idx && q.type === "yesno"
-          ? {
-              ...q,
-              acceptableAnswers: q.acceptableAnswers
-                ? q.acceptableAnswers.includes(answer)
-                  ? q.acceptableAnswers.filter((a) => a !== answer)
-                  : [...q.acceptableAnswers, answer]
-                : [answer],
-            }
-          : q
-      )
+      questions.map((q, i) => {
+        if (i !== idx) return q;
+        if (q.type === "yesno" || q.type === "multiplechoice") {
+          const acceptableAnswers = q.acceptableAnswers ?? [];
+          return {
+            ...q,
+            acceptableAnswers: acceptableAnswers.includes(answer)
+              ? acceptableAnswers.filter((a) => a !== answer)
+              : [...acceptableAnswers, answer],
+          };
+        }
+        return q;
+      })
+    );
+  };
+
+  // MC choices logic
+  const handleChoiceChange = (idx: number, v: string) => {
+    setChoices((prev) => {
+      const arr = [...prev];
+      arr[idx] = v;
+      return arr;
+    });
+    // If editing a choice, and it was marked acceptable, sync rubric text
+    setActiveRubric((r) =>
+      r.filter(ans => choices.includes(ans))
+    );
+  };
+
+  const handleAddChoice = () => {
+    if (choices.length >= 6) return;
+    setChoices([...choices, ""]);
+  };
+
+  const handleRemoveChoice = (idx: number) => {
+    if (choices.length <= 2) return;
+    setChoices(choices.filter((_, i) => i !== idx));
+    setActiveRubric((r) =>
+      r.filter(ans => ans !== choices[idx])
     );
   };
 
@@ -137,6 +189,11 @@ export const SurveyBuilder = ({
           llmCriteria={llmCriteria}
           onLLMCriteriaChange={setLLMCriteria}
           onAdd={addLine}
+          // MC props
+          choices={choices}
+          onChoiceChange={handleChoiceChange}
+          onAddChoice={handleAddChoice}
+          onRemoveChoice={handleRemoveChoice}
         />
 
         <SuggestionSection
@@ -160,3 +217,4 @@ export const SurveyBuilder = ({
     </Card>
   );
 };
+

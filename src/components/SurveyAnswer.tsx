@@ -111,6 +111,28 @@ export const SurveyAnswer = ({
               </Button>
             </form>
           )}
+
+          {/* Multiple Choice Input */}
+          {current.type === "multiplechoice" && current.choices && (
+            <div className="flex flex-col gap-3">
+              {current.choices.map((choice, idx) => (
+                <Button
+                  key={idx}
+                  type="button"
+                  size="lg"
+                  className="w-full"
+                  variant={inputValue === choice ? "default" : "outline"}
+                  onClick={() => {
+                    setInputValue(choice);
+                    setTimeout(() => handleAnswer(choice), 100);
+                  }}
+                  data-testid={`mc-choice-${idx}`}
+                >
+                  {String.fromCharCode(65 + idx)}. {choice}
+                </Button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
       <div className="flex gap-0.5 mt-3 justify-center">
@@ -127,3 +149,4 @@ export const SurveyAnswer = ({
     </Card>
   );
 };
+
