@@ -1,6 +1,6 @@
 
 import React from "react";
-import QRCode from "qrcode.react";
+import { QRCode } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
