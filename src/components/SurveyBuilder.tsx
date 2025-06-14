@@ -15,6 +15,11 @@ type Question = {
   type: QuestionType;
   // For yesno only: which values are acceptable
   acceptableAnswers?: string[];
+  // For number
+  min?: number;
+  max?: number;
+  // For text
+  llmCriteria?: string;
 };
 
 export type Survey = {
@@ -31,11 +36,17 @@ export const SurveyBuilder = ({
   const [showSuggest, setShowSuggest] = useState(false);
   const [type, setType] = useState<QuestionType>("yesno");
   const [activeRubric, setActiveRubric] = useState<string[]>(["yes"]);
+  const [minValue, setMinValue] = useState("");
+  const [maxValue, setMaxValue] = useState("");
+  const [llmCriteria, setLLMCriteria] = useState("");
 
   const resetFields = () => {
     setInput("");
     setType("yesno");
     setActiveRubric(["yes"]);
+    setMinValue("");
+    setMaxValue("");
+    setLLMCriteria("");
   };
 
   const addLine = () => {
@@ -44,6 +55,19 @@ export const SurveyBuilder = ({
     let question: Question;
     if (type === "yesno") {
       question = { text: trimmed, type, acceptableAnswers: [...activeRubric] };
+    } else if (type === "number") {
+      question = {
+        text: trimmed,
+        type,
+        min: minValue !== "" ? Number(minValue) : undefined,
+        max: maxValue !== "" ? Number(maxValue) : undefined,
+      };
+    } else if (type === "text") {
+      question = {
+        text: trimmed,
+        type,
+        llmCriteria: llmCriteria.trim() ? llmCriteria.trim() : undefined,
+      };
     } else {
       question = { text: trimmed, type };
     }
@@ -106,6 +130,12 @@ export const SurveyBuilder = ({
           onInputChange={setInput}
           onTypeChange={setType}
           onRubricToggle={setRubricForNext}
+          minValue={minValue}
+          maxValue={maxValue}
+          onMinChange={setMinValue}
+          onMaxChange={setMaxValue}
+          llmCriteria={llmCriteria}
+          onLLMCriteriaChange={setLLMCriteria}
           onAdd={addLine}
         />
 

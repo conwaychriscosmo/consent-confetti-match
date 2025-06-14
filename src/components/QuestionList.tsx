@@ -15,7 +15,11 @@ type Question = {
   emoji?: string;
   type: "yesno" | "number" | "text";
   acceptableAnswers?: string[];
+  min?: number;
+  max?: number;
+  llmCriteria?: string;
 };
+
 type Props = {
   questions: Question[];
   onRemove: (idx: number) => void;
@@ -52,6 +56,7 @@ export const QuestionList = ({
             ✕
           </Button>
         </div>
+        {/* Yes/No criteria */}
         {q.type === "yesno" && (
           <div className="flex gap-2 mt-1 ml-5 text-sm">
             <span className="opacity-80">Acceptable:</span>
@@ -71,6 +76,24 @@ export const QuestionList = ({
                 {ans === "yes" ? "Yes" : "No"}
               </Button>
             ))}
+          </div>
+        )}
+        {/* Number min/max criteria */}
+        {q.type === "number" && (q.min != null || q.max != null) && (
+          <div className="flex gap-2 mt-1 ml-5 text-xs opacity-80">
+            {q.min != null && (
+              <span>Min: <span className="font-semibold">{q.min}</span></span>
+            )}
+            {q.max != null && (
+              <span>Max: <span className="font-semibold">{q.max}</span></span>
+            )}
+          </div>
+        )}
+        {/* Text LLM criteria */}
+        {q.type === "text" && q.llmCriteria && (
+          <div className="flex gap-1 mt-1 ml-5 text-xs opacity-80">
+            <span>Criteria:</span>
+            <span className="italic">{q.llmCriteria}</span>
           </div>
         )}
       </div>
